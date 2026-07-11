@@ -1,4 +1,5 @@
 # Sistema de Empréstimos
+<img width="1249" height="906" alt="python emprestimo" src="https://github.com/user-attachments/assets/21dc9ac3-aa82-4c8f-83b3-ee1ddc79da35" />
 
 <!--
   Print de tela da interface web. Depois de tirar a captura, arraste a
