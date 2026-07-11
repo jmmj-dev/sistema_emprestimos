@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titulo %}Novo empréstimo · Livro de Empréstimos{% endblock %}
+
+{% block conteudo %}
+  <div class="eyebrow">Contrato</div>
+  <h1>Novo empréstimo</h1>
+  <p class="subtitulo">As parcelas usam a Tabela Price (juros compostos sobre o saldo devedor) e são geradas automaticamente, junto com as datas de vencimento.</p>
+
+  {% if clientes %}
+    <form class="ficha" method="POST">
+      <div class="campo">
+        <label for="cliente_id">Cliente</label>
+        <select id="cliente_id" name="cliente_id" required>
+          <option value="" disabled selected>Selecione um cliente</option>
+          {% for c in clientes %}
+            <option value="{{ c.id }}">{{ c.nome }} — {{ c.cpf }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="valor_principal">Valor emprestado (R$)</label>
+        <input type="number" step="0.01" min="0.01" id="valor_principal" name="valor_principal" required>
+      </div>
+
+      <div class="linha-dupla">
+        <div class="campo">
+          <label for="taxa_juros_mensal">Taxa de juros ao mês (%)</label>
+          <input type="number" step="0.01" min="0" id="taxa_juros_mensal" name="taxa_juros_mensal" value="5" required>
+        </div>
+        <div class="campo">
+          <label for="numero_parcelas">Número de parcelas</label>
+          <input type="number" step="1" min="1" id="numero_parcelas" name="numero_parcelas" value="3" required>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="data_emprestimo">Data do empréstimo</label>
+        <input type="date" id="data_emprestimo" name="data_emprestimo" value="{{ hoje }}">
+        <div class="campo-ajuda">A primeira parcela vence um mês após esta data.</div>
+      </div>
+
+      <button type="submit" class="botao">Gerar empréstimo e parcelas</button>
+    </form>
+  {% else %}
+    <p class="linha-vazia">Você precisa cadastrar um cliente antes de criar um empréstimo. <a href="{{ url_for('novo_cliente') }}">Cadastrar cliente</a>.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,331 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+:root {
+  --paper: #EDF1E3;
+  --paper-raised: #F5F8EE;
+  --ink: #1E2E22;
+  --ink-soft: #52604F;
+  --ink-faint: #8A9484;
+  --line: #C7D0B8;
+  --line-strong: #9FAE8D;
+  --green: #2F6B4F;
+  --green-deep: #1F4A36;
+  --amber: #A6791F;
+  --red: #A13A2C;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% 2.1rem;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a { color: var(--green-deep); }
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+/* ---------- Cabeçalho / navegação ---------- */
+
+header.topo {
+  background: var(--paper-raised);
+  border-bottom: 3px double var(--ink);
+  margin-bottom: 2.2rem;
+}
+
+.topo-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.4rem 1.5rem 1.1rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.marca {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.01em;
+}
+
+.marca span {
+  color: var(--green-deep);
+  font-style: italic;
+  font-weight: 600;
+}
+
+nav.abas {
+  display: flex;
+  gap: 1.6rem;
+}
+
+nav.abas a {
+  text-decoration: none;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid transparent;
+}
+
+nav.abas a:hover,
+nav.abas a.ativa {
+  color: var(--ink);
+  border-bottom-color: var(--green);
+}
+
+/* ---------- Tipografia geral ---------- */
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0 0 0.3rem;
+  color: var(--ink);
+}
+
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.3rem; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.4rem;
+}
+
+.subtitulo {
+  color: var(--ink-soft);
+  margin-bottom: 2rem;
+}
+
+/* ---------- Cartões de estatística (extrato) ---------- */
+
+.extrato {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line-strong);
+  background: var(--paper-raised);
+  margin-bottom: 2.4rem;
+}
+
+.extrato-item {
+  padding: 1.1rem 1.3rem;
+  border-right: 1px solid var(--line);
+}
+.extrato-item:last-child { border-right: none; }
+
+.extrato-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.35rem;
+}
+
+.extrato-valor {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.extrato-valor.verde { color: var(--green-deep); }
+.extrato-valor.vermelho { color: var(--red); }
+
+@media (max-width: 720px) {
+  .extrato { grid-template-columns: repeat(2, 1fr); }
+  .extrato-item:nth-child(2) { border-right: none; }
+}
+
+/* ---------- Tabelas tipo livro-razão ---------- */
+
+table.razao {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+  background: var(--paper-raised);
+}
+
+table.razao th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+table.razao td {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
+}
+
+table.razao tr:hover td { background: rgba(47, 107, 79, 0.05); }
+
+td.numero, th.numero { font-family: var(--font-mono); text-align: right; }
+
+.linha-vazia {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--ink-faint);
+  font-style: italic;
+  border: 1px dashed var(--line-strong);
+  background: var(--paper-raised);
+}
+
+/* ---------- Carimbos de status (elemento de assinatura) ---------- */
+
+.carimbo {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  transform: rotate(-3deg);
+  position: relative;
+}
+
+.carimbo.paga { color: var(--green); }
+.carimbo.pendente { color: var(--amber); }
+.carimbo.atrasada { color: var(--red); transform: rotate(2deg); }
+.carimbo.aberto { color: var(--ink-soft); }
+.carimbo.quitado { color: var(--green); }
+.carimbo.cancelado { color: var(--ink-faint); }
+
+/* ---------- Formulários ---------- */
+
+form.ficha {
+  background: var(--paper-raised);
+  border: 1px solid var(--line-strong);
+  padding: 1.8rem;
+  max-width: 520px;
+}
+
+.campo { margin-bottom: 1.3rem; }
+
+.campo label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.4rem;
+}
+
+.campo input,
+.campo select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 0.94rem;
+  color: var(--ink);
+}
+
+.campo input:focus,
+.campo select:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+.campo-ajuda {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  margin-top: 0.3rem;
+}
+
+.linha-dupla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ---------- Botões ---------- */
+
+.botao {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.botao:hover { background: var(--green-deep); border-color: var(--green-deep); }
+
+.botao.secundario {
+  background: transparent;
+  color: var(--ink);
+}
+.botao.secundario:hover { background: var(--paper); }
+
+.botao.pequeno {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.7rem;
+}
+
+/* ---------- Avisos ---------- */
+
+.avisos { margin-bottom: 1.5rem; }
+
+.aviso {
+  padding: 0.7rem 1rem;
+  border-left: 3px solid var(--green);
+  background: var(--paper-raised);
+  font-size: 0.88rem;
+  margin-bottom: 0.5rem;
+}
+
+.aviso.erro { border-left-color: var(--red); color: var(--red); }
+.aviso.sucesso { border-left-color: var(--green); color: var(--green-deep); }
+
+/* ---------- Cabeçalho de seção ---------- */
+
+.secao-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.rotulo-parcela {
+  font-family: var(--font-mono);
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+}

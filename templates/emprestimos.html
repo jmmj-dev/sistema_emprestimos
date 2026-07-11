@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %}Empréstimos · Livro de Empréstimos{% endblock %}
+
+{% block conteudo %}
+  <div class="secao-topo">
+    <div>
+      <div class="eyebrow">Contratos</div>
+      <h1>Empréstimos</h1>
+    </div>
+    <a href="{{ url_for('novo_emprestimo') }}" class="botao">+ Novo empréstimo</a>
+  </div>
+
+  {% if emprestimos %}
+    <table class="razao">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Data</th>
+          <th class="numero">Principal</th>
+          <th class="numero">Taxa</th>
+          <th>Parcelas</th>
+          <th class="numero">Pendente</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in emprestimos %}
+          <tr onclick="window.location='{{ url_for('detalhe_emprestimo', emprestimo_id=emp.id) }}'" style="cursor:pointer">
+            <td>{{ clientes_por_id[emp.cliente_id].nome }}</td>
+            <td>{{ emp.data_emprestimo.strftime('%d/%m/%Y') }}</td>
+            <td class="numero">R$ {{ "%.2f"|format(emp.valor_principal) }}</td>
+            <td class="numero">{{ "%.1f"|format(emp.taxa_juros_mensal * 100) }}%</td>
+            <td>{{ emp.numero_parcelas }}x</td>
+            <td class="numero">R$ {{ "%.2f"|format(resumos[emp.id].total_pendente) }}</td>
+            <td><span class="carimbo {{ emp.status.value }}">{{ emp.status.value }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="linha-vazia">Nenhum empréstimo cadastrado ainda. <a href="{{ url_for('novo_emprestimo') }}">Crie o primeiro</a>.</p>
+  {% endif %}
+{% endblock %}

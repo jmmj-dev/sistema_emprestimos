@@ -1,0 +1,200 @@
+"""
+services.py
+-----------
+Aqui mora o "cérebro" do sistema: as regras de negócio. É a camada mais
+importante para você estudar, porque é onde a matemática financeira e as
+decisões (o que é atraso? como calcular a parcela?) acontecem.
+
+Nenhuma linha de SQL aparece aqui — quem fala com o banco é o
+repositories.py. services.py só usa as funções que ele expõe.
+"""
+
+from datetime import date
+from calendar import monthrange
+
+import repositories as repo
+from models import Cliente, Emprestimo, Parcela, StatusEmprestimo, StatusParcela
+
+
+# ---------- Clientes ----------
+
+def cadastrar_cliente(nome: str, cpf: str, telefone: str = "", email: str = "") -> Cliente:
+    if not nome.strip():
+        raise ValueError("Nome não pode ser vazio.")
+    if not cpf.strip():
+        raise ValueError("CPF não pode ser vazio.")
+    cliente = Cliente(nome=nome.strip(), cpf=cpf.strip(), telefone=telefone, email=email)
+    return repo.salvar_cliente(cliente)
+
+
+# ---------- Cálculo financeiro: Tabela Price ----------
+#
+# A Tabela Price (também chamada de "Sistema Francês de Amortização") é o
+# método que a maioria dos bancos usa de verdade. A diferença central para
+# juros simples é: os juros de cada parcela incidem sobre o SALDO DEVEDOR
+# restante, não sobre o valor original emprestado. Como o saldo diminui a
+# cada parcela paga, o valor de juros também diminui mês a mês — mesmo a
+# parcela sendo sempre igual.
+#
+# Fórmula da parcela fixa (PMT = "payment"):
+#
+#            PV * i
+#   PMT = ----------------
+#          1 - (1 + i)^-n
+#
+#   PV = valor principal (emprestado)
+#   i  = taxa de juros mensal (ex: 0.05 para 5%)
+#   n  = número de parcelas
+#
+# Cada parcela então se divide em duas partes:
+#   juros        = saldo_devedor_atual * i        (o "aluguel do dinheiro")
+#   amortização  = valor_da_parcela - juros         (o que realmente abate a dívida)
+#   novo_saldo   = saldo_devedor_atual - amortização
+#
+# Por isso, no início do contrato, a maior parte da parcela é juros; perto
+# do fim, a maior parte é amortização — mesmo o valor da parcela nunca
+# mudando. Isso é exatamente o que aparece no extrato de um financiamento
+# bancário real.
+
+def somar_meses(data_base: date, meses: int) -> date:
+    """
+    Soma 'meses' à data_base, sem depender de bibliotecas externas.
+    Ex: 31/01/2026 + 1 mês = 28/02/2026 (fevereiro não tem dia 31, então
+    usamos o último dia válido do mês de destino).
+    """
+    mes_total = data_base.month - 1 + meses
+    ano = data_base.year + mes_total // 12
+    mes = mes_total % 12 + 1
+    ultimo_dia_do_mes = monthrange(ano, mes)[1]
+    dia = min(data_base.day, ultimo_dia_do_mes)
+    return date(ano, mes, dia)
+
+
+def calcular_parcela_price(valor_principal: float, taxa_juros_mensal: float,
+                            numero_parcelas: int) -> float:
+    if taxa_juros_mensal == 0:
+        # Sem juros, é só dividir o valor igualmente (evita divisão por
+        # zero na fórmula, já que (1+0)^-n sempre resulta em 1).
+        return round(valor_principal / numero_parcelas, 2)
+
+    i = taxa_juros_mensal
+    fator = 1 - (1 + i) ** (-numero_parcelas)
+    pmt = valor_principal * i / fator
+    return round(pmt, 2)
+
+
+def gerar_parcelas(valor_principal: float, taxa_juros_mensal: float,
+                    numero_parcelas: int, data_emprestimo: date) -> list[Parcela]:
+    valor_parcela = calcular_parcela_price(valor_principal, taxa_juros_mensal, numero_parcelas)
+    parcelas = []
+    saldo_devedor = valor_principal
+
+    for n in range(1, numero_parcelas + 1):
+        juros_parcela = round(saldo_devedor * taxa_juros_mensal, 2)
+
+        if n == numero_parcelas:
+            # Na última parcela, forçamos a amortização a fechar exatamente
+            # o saldo devedor. Isso evita que sobre ou falte 1 ou 2
+            # centavos de "resíduo" no fim do contrato por causa de
+            # arredondamentos acumulados ao longo das parcelas.
+            amortizacao = round(saldo_devedor, 2)
+            valor_desta_parcela = round(amortizacao + juros_parcela, 2)
+        else:
+            amortizacao = round(valor_parcela - juros_parcela, 2)
+            valor_desta_parcela = valor_parcela
+
+        saldo_devedor = round(saldo_devedor - amortizacao, 2)
+
+        # somar_meses avança "meses de verdade" (ex: 31/jan + 1 mês =
+        # 28 ou 29/fev), diferente de timedelta(days=30) que acumularia
+        # erro mês a mês.
+        vencimento = somar_meses(data_emprestimo, n)
+
+        parcelas.append(Parcela(
+            emprestimo_id=0,  # preenchido depois de salvar o empréstimo (tem que ter o id)
+            numero=n,
+            valor=valor_desta_parcela,
+            juros=juros_parcela,
+            amortizacao=amortizacao,
+            saldo_devedor=max(saldo_devedor, 0.0),
+            data_vencimento=vencimento,
+        ))
+    return parcelas
+
+
+# ---------- Empréstimos ----------
+
+def criar_emprestimo(cliente_id: int, valor_principal: float, taxa_juros_mensal: float,
+                      numero_parcelas: int, data_emprestimo: date = None) -> Emprestimo:
+    if valor_principal <= 0:
+        raise ValueError("Valor do empréstimo deve ser maior que zero.")
+    if numero_parcelas <= 0:
+        raise ValueError("Número de parcelas deve ser maior que zero.")
+    if taxa_juros_mensal < 0:
+        raise ValueError("Taxa de juros não pode ser negativa.")
+    if repo.buscar_cliente_por_id(cliente_id) is None:
+        raise ValueError(f"Cliente com id {cliente_id} não encontrado.")
+
+    data_emprestimo = data_emprestimo or date.today()
+
+    emprestimo = Emprestimo(
+        cliente_id=cliente_id,
+        valor_principal=valor_principal,
+        taxa_juros_mensal=taxa_juros_mensal,
+        numero_parcelas=numero_parcelas,
+        data_emprestimo=data_emprestimo,
+    )
+    emprestimo.parcelas = gerar_parcelas(valor_principal, taxa_juros_mensal,
+                                          numero_parcelas, data_emprestimo)
+    return repo.salvar_emprestimo(emprestimo)
+
+
+def registrar_pagamento_parcela(parcela_id: int, data_pagamento: date = None) -> None:
+    data_pagamento = data_pagamento or date.today()
+    repo.atualizar_status_parcela(parcela_id, StatusParcela.PAGA, data_pagamento)
+    _verificar_quitacao_automatica(parcela_id)
+
+
+def _verificar_quitacao_automatica(parcela_id: int) -> None:
+    """Se todas as parcelas de um empréstimo estão pagas, marca o empréstimo como quitado."""
+    conn_emprestimos = repo.listar_emprestimos()
+    for emp in conn_emprestimos:
+        ids_parcelas = [p.id for p in emp.parcelas]
+        if parcela_id in ids_parcelas:
+            todas_pagas = all(p.status == StatusParcela.PAGA for p in emp.parcelas)
+            if todas_pagas:
+                repo.atualizar_status_emprestimo(emp.id, StatusEmprestimo.QUITADO)
+            return
+
+
+def atualizar_parcelas_atrasadas() -> int:
+    """
+    Percorre todas as parcelas pendentes e marca como ATRASADA as que já
+    passaram da data de vencimento. Retorna quantas foram atualizadas.
+    Ideal rodar isso toda vez que o sistema abre.
+    """
+    hoje = date.today()
+    total_atualizadas = 0
+    for emp in repo.listar_emprestimos():
+        for parcela in emp.parcelas:
+            if parcela.status == StatusParcela.PENDENTE and parcela.data_vencimento < hoje:
+                repo.atualizar_status_parcela(parcela.id, StatusParcela.ATRASADA)
+                total_atualizadas += 1
+    return total_atualizadas
+
+
+def resumo_emprestimo(emprestimo: Emprestimo) -> dict:
+    """Calcula totais úteis para exibir na tela: total pago, total em aberto, etc."""
+    total_pago = sum(p.valor for p in emprestimo.parcelas if p.status == StatusParcela.PAGA)
+    total_pendente = sum(p.valor for p in emprestimo.parcelas
+                          if p.status in (StatusParcela.PENDENTE, StatusParcela.ATRASADA))
+    total_atrasado = sum(p.valor for p in emprestimo.parcelas if p.status == StatusParcela.ATRASADA)
+    valor_total_contrato = sum(p.valor for p in emprestimo.parcelas)
+    total_juros = sum(p.juros for p in emprestimo.parcelas)
+    return {
+        "valor_total_contrato": round(valor_total_contrato, 2),
+        "total_pago": round(total_pago, 2),
+        "total_pendente": round(total_pendente, 2),
+        "total_atrasado": round(total_atrasado, 2),
+        "total_juros": round(total_juros, 2),
+    }

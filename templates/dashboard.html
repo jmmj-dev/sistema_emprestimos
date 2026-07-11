@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block titulo %}Extrato geral · Livro de Empréstimos{% endblock %}
+
+{% block conteudo %}
+  <div class="eyebrow">Posição atual</div>
+  <h1>Extrato geral</h1>
+  <p class="subtitulo">Resumo de tudo o que foi emprestado, recebido e o que ainda está em aberto.</p>
+
+  <div class="extrato">
+    <div class="extrato-item">
+      <div class="extrato-label">Total emprestado</div>
+      <div class="extrato-valor">R$ {{ "%.2f"|format(total_emprestado) }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">Recebido</div>
+      <div class="extrato-valor verde">R$ {{ "%.2f"|format(total_recebido) }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">A receber</div>
+      <div class="extrato-valor">R$ {{ "%.2f"|format(total_a_receber) }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">Em atraso</div>
+      <div class="extrato-valor {{ 'vermelho' if total_atrasado > 0 }}">R$ {{ "%.2f"|format(total_atrasado) }}</div>
+    </div>
+  </div>
+
+  <div class="secao-topo">
+    <h2>Movimentações recentes</h2>
+    <a href="{{ url_for('novo_emprestimo') }}" class="botao">+ Novo empréstimo</a>
+  </div>
+
+  {% if emprestimos_recentes %}
+    <table class="razao">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Data</th>
+          <th class="numero">Principal</th>
+          <th>Parcelas</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in emprestimos_recentes %}
+          <tr onclick="window.location='{{ url_for('detalhe_emprestimo', emprestimo_id=emp.id) }}'" style="cursor:pointer">
+            <td>{{ clientes_por_id[emp.cliente_id].nome }}</td>
+            <td>{{ emp.data_emprestimo.strftime('%d/%m/%Y') }}</td>
+            <td class="numero">R$ {{ "%.2f"|format(emp.valor_principal) }}</td>
+            <td>{{ emp.numero_parcelas }}x</td>
+            <td><span class="carimbo {{ emp.status.value }}">{{ emp.status.value }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="linha-vazia">Nenhuma movimentação ainda. <a href="{{ url_for('novo_cliente') }}">Cadastre um cliente</a> e depois crie o primeiro empréstimo.</p>
+  {% endif %}
+
+  <p class="rotulo-parcela">{{ total_clientes }} cliente(s) · {{ total_emprestimos }} empréstimo(s) no total</p>
+{% endblock %}

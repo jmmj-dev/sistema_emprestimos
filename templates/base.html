@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Livro de Empréstimos{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header class="topo">
+    <div class="topo-inner">
+      <div class="marca">Livro de <span>Empréstimos</span></div>
+      <nav class="abas">
+        <a href="{{ url_for('dashboard') }}" class="{{ 'ativa' if request.endpoint == 'dashboard' }}">Extrato</a>
+        <a href="{{ url_for('listar_clientes') }}" class="{{ 'ativa' if request.endpoint in ['listar_clientes', 'novo_cliente'] }}">Clientes</a>
+        <a href="{{ url_for('listar_emprestimos') }}" class="{{ 'ativa' if request.endpoint in ['listar_emprestimos', 'novo_emprestimo', 'detalhe_emprestimo'] }}">Empréstimos</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% if mensagens %}
+        <div class="avisos">
+          {% for categoria, texto in mensagens %}
+            <div class="aviso {{ categoria }}">{{ texto }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block conteudo %}{% endblock %}
+  </div>
+
+</body>
+</html>

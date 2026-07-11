@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titulo %}Empréstimo #{{ emprestimo.id }} · Livro de Empréstimos{% endblock %}
+
+{% block conteudo %}
+  <div class="eyebrow">Contrato #{{ emprestimo.id }}</div>
+  <h1>{{ cliente.nome }}</h1>
+  <p class="subtitulo">
+    Emprestado em {{ emprestimo.data_emprestimo.strftime('%d/%m/%Y') }}
+    · {{ "%.1f"|format(emprestimo.taxa_juros_mensal * 100) }}% ao mês
+    · {{ emprestimo.numero_parcelas }} parcela(s)
+    · <span class="carimbo {{ emprestimo.status.value }}">{{ emprestimo.status.value }}</span>
+  </p>
+
+  <div class="extrato">
+    <div class="extrato-item">
+      <div class="extrato-label">Principal</div>
+      <div class="extrato-valor">R$ {{ "%.2f"|format(emprestimo.valor_principal) }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">Juros do contrato</div>
+      <div class="extrato-valor">R$ {{ "%.2f"|format(resumo.total_juros) }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">Total do contrato</div>
+      <div class="extrato-valor">R$ {{ "%.2f"|format(resumo.valor_total_contrato) }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">Pago</div>
+      <div class="extrato-valor verde">R$ {{ "%.2f"|format(resumo.total_pago) }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">Em atraso</div>
+      <div class="extrato-valor {{ 'vermelho' if resumo.total_atrasado > 0 }}">R$ {{ "%.2f"|format(resumo.total_atrasado) }}</div>
+    </div>
+  </div>
+
+  <h2>Parcelas <span class="rotulo-parcela">— Tabela Price</span></h2>
+  <table class="razao">
+    <thead>
+      <tr>
+        <th>Nº</th>
+        <th>Vencimento</th>
+        <th class="numero">Juros</th>
+        <th class="numero">Amortização</th>
+        <th class="numero">Valor</th>
+        <th class="numero">Saldo devedor</th>
+        <th>Status</th>
+        <th>Pago em</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in emprestimo.parcelas %}
+        <tr>
+          <td>{{ p.numero }}</td>
+          <td>{{ p.data_vencimento.strftime('%d/%m/%Y') }}</td>
+          <td class="numero">R$ {{ "%.2f"|format(p.juros) }}</td>
+          <td class="numero">R$ {{ "%.2f"|format(p.amortizacao) }}</td>
+          <td class="numero">R$ {{ "%.2f"|format(p.valor) }}</td>
+          <td class="numero">R$ {{ "%.2f"|format(p.saldo_devedor) }}</td>
+          <td><span class="carimbo {{ p.status.value }}">{{ p.status.value }}</span></td>
+          <td>{{ p.data_pagamento.strftime('%d/%m/%Y') if p.data_pagamento else '—' }}</td>
+          <td>
+            {% if p.status.value != 'paga' %}
+              <form method="POST" action="{{ url_for('pagar_parcela', parcela_id=p.id) }}" style="display:inline">
+                <input type="hidden" name="emprestimo_id" value="{{ emprestimo.id }}">
+                <button type="submit" class="botao pequeno secundario">Registrar pagamento</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
