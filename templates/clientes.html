@@ -10,6 +10,12 @@
     <a href="{{ url_for('novo_cliente') }}" class="botao">+ Novo cliente</a>
   </div>
 
+  <form class="busca" method="GET" action="{{ url_for('listar_clientes') }}">
+    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por nome ou CPF...">
+    <button type="submit" class="botao secundario pequeno">Buscar</button>
+    {% if busca %}<a href="{{ url_for('listar_clientes') }}" class="limpar-filtro">limpar</a>{% endif %}
+  </form>
+
   {% if clientes %}
     <table class="razao">
       <thead>
@@ -18,6 +24,7 @@
           <th>CPF</th>
           <th>Telefone</th>
           <th>Email</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -27,10 +34,19 @@
             <td class="numero">{{ c.cpf }}</td>
             <td>{{ c.telefone or '—' }}</td>
             <td>{{ c.email or '—' }}</td>
+            <td class="acoes">
+              <a href="{{ url_for('editar_cliente', cliente_id=c.id) }}" class="botao pequeno secundario">Editar</a>
+              <form method="POST" action="{{ url_for('excluir_cliente', cliente_id=c.id) }}" style="display:inline"
+                    onsubmit="return confirm('Excluir {{ c.nome }}? Isso só é possível se o cliente não tiver empréstimos.');">
+                <button type="submit" class="botao pequeno secundario perigo">Excluir</button>
+              </form>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
+  {% elif busca %}
+    <p class="linha-vazia">Nenhum cliente encontrado para "{{ busca }}".</p>
   {% else %}
     <p class="linha-vazia">Nenhum cliente cadastrado ainda. <a href="{{ url_for('novo_cliente') }}">Cadastre o primeiro</a>.</p>
   {% endif %}

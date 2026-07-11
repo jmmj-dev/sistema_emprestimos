@@ -10,6 +10,18 @@
     <a href="{{ url_for('novo_emprestimo') }}" class="botao">+ Novo empréstimo</a>
   </div>
 
+  <form class="busca" method="GET" action="{{ url_for('listar_emprestimos') }}">
+    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por cliente ou CPF...">
+    <select name="status">
+      <option value="" {{ 'selected' if not status_selecionado }}>Todos os status</option>
+      <option value="aberto" {{ 'selected' if status_selecionado == 'aberto' }}>Aberto</option>
+      <option value="quitado" {{ 'selected' if status_selecionado == 'quitado' }}>Quitado</option>
+      <option value="cancelado" {{ 'selected' if status_selecionado == 'cancelado' }}>Cancelado</option>
+    </select>
+    <button type="submit" class="botao secundario pequeno">Filtrar</button>
+    {% if busca or status_selecionado %}<a href="{{ url_for('listar_emprestimos') }}" class="limpar-filtro">limpar</a>{% endif %}
+  </form>
+
   {% if emprestimos %}
     <table class="razao">
       <thead>
@@ -37,6 +49,8 @@
         {% endfor %}
       </tbody>
     </table>
+  {% elif busca or status_selecionado %}
+    <p class="linha-vazia">Nenhum empréstimo encontrado com esse filtro.</p>
   {% else %}
     <p class="linha-vazia">Nenhum empréstimo cadastrado ainda. <a href="{{ url_for('novo_emprestimo') }}">Crie o primeiro</a>.</p>
   {% endif %}

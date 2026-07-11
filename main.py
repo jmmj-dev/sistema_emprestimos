@@ -68,6 +68,41 @@ def menu_listar_clientes():
         print(f"  [{c.id}] {c.nome} - CPF: {c.cpf} - Tel: {c.telefone}")
 
 
+def menu_editar_cliente():
+    print("\n--- Editar Cliente ---")
+    menu_listar_clientes()
+    cliente_id = ler_int("ID do cliente a editar: ")
+    cliente = repo.buscar_cliente_por_id(cliente_id)
+    if cliente is None:
+        print("  Cliente não encontrado.")
+        return
+    print(f"  Deixe em branco para manter o valor atual entre parênteses.")
+    nome = input(f"Nome ({cliente.nome}): ").strip() or cliente.nome
+    cpf = input(f"CPF ({cliente.cpf}): ").strip() or cliente.cpf
+    telefone = input(f"Telefone ({cliente.telefone}): ").strip() or cliente.telefone
+    email = input(f"Email ({cliente.email}): ").strip() or cliente.email
+    try:
+        services.atualizar_cliente(cliente_id, nome, cpf, telefone, email)
+        print("  Cliente atualizado com sucesso!")
+    except ValueError as e:
+        print(f"  Erro: {e}")
+
+
+def menu_excluir_cliente():
+    print("\n--- Excluir Cliente ---")
+    menu_listar_clientes()
+    cliente_id = ler_int("ID do cliente a excluir: ")
+    confirmacao = input("Tem certeza? Isso não pode ser desfeito (s/N): ").strip().lower()
+    if confirmacao != "s":
+        print("  Cancelado.")
+        return
+    try:
+        services.excluir_cliente(cliente_id)
+        print("  Cliente excluído com sucesso!")
+    except ValueError as e:
+        print(f"  Erro: {e}")
+
+
 def menu_criar_emprestimo():
     print("\n--- Novo Empréstimo ---")
     menu_listar_clientes()
@@ -88,11 +123,9 @@ def menu_criar_emprestimo():
         print(f"  Erro: {e}")
 
 
-def menu_listar_emprestimos():
-    print("\n--- Empréstimos ---")
-    emprestimos = repo.listar_emprestimos()
+def _imprimir_emprestimos(emprestimos):
     if not emprestimos:
-        print("  Nenhum empréstimo cadastrado ainda.")
+        print("  Nenhum empréstimo encontrado.")
         return
     for emp in emprestimos:
         cliente = repo.buscar_cliente_por_id(emp.cliente_id)
@@ -105,9 +138,33 @@ def menu_listar_emprestimos():
               f"Atrasado: R$ {resumo['total_atrasado']:.2f}")
 
 
+def menu_listar_emprestimos():
+    print("\n--- Empréstimos ---")
+    print("  Filtrar por status? [1] Todos [2] Aberto [3] Quitado [4] Cancelado")
+    escolha = input("  Opção (ENTER para todos): ").strip()
+    status_map = {"2": "aberto", "3": "quitado", "4": "cancelado"}
+    status = status_map.get(escolha, "")
+    _imprimir_emprestimos(services.filtrar_emprestimos(status=status))
+
+
+def menu_cancelar_emprestimo():
+    print("\n--- Cancelar Empréstimo ---")
+    _imprimir_emprestimos(repo.listar_emprestimos())
+    emprestimo_id = ler_int("\nID do empréstimo a cancelar: ")
+    confirmacao = input("Tem certeza? Isso não pode ser desfeito (s/N): ").strip().lower()
+    if confirmacao != "s":
+        print("  Cancelado.")
+        return
+    try:
+        services.cancelar_emprestimo(emprestimo_id)
+        print("  Empréstimo cancelado com sucesso!")
+    except ValueError as e:
+        print(f"  Erro: {e}")
+
+
 def menu_ver_parcelas():
     print("\n--- Ver parcelas de um empréstimo ---")
-    menu_listar_emprestimos()
+    _imprimir_emprestimos(repo.listar_emprestimos())
     emprestimo_id = ler_int("\nID do empréstimo: ")
     parcelas = repo.listar_parcelas_do_emprestimo(emprestimo_id)
     if not parcelas:
@@ -119,6 +176,11 @@ def menu_ver_parcelas():
         print(f"  {icones.get(p.status, '')} [{p.id}] Parcela {p.numero}: R$ {p.valor:.2f} "
               f"(juros R$ {p.juros:.2f} + amort. R$ {p.amortizacao:.2f}) - "
               f"vence {p.data_vencimento.strftime('%d/%m/%Y')} - status: {p.status.value}{pago_em}")
+        if p.status == StatusParcela.ATRASADA:
+            encargos = services.calcular_encargos_atraso(p)
+            print(f"        {encargos['dias_atraso']} dia(s) de atraso - multa R$ {encargos['multa']:.2f} "
+                  f"+ juros de mora R$ {encargos['juros_mora']:.2f} = "
+                  f"valor atualizado R$ {encargos['valor_atualizado']:.2f}")
 
 
 def menu_registrar_pagamento():
@@ -137,10 +199,13 @@ def exibir_menu():
     print("=" * 40)
     print("  1. Cadastrar cliente")
     print("  2. Listar clientes")
-    print("  3. Criar empréstimo")
-    print("  4. Listar empréstimos")
-    print("  5. Ver parcelas de um empréstimo")
-    print("  6. Registrar pagamento de parcela")
+    print("  3. Editar cliente")
+    print("  4. Excluir cliente")
+    print("  5. Criar empréstimo")
+    print("  6. Listar empréstimos")
+    print("  7. Cancelar empréstimo")
+    print("  8. Ver parcelas de um empréstimo")
+    print("  9. Registrar pagamento de parcela")
     print("  0. Sair")
 
 
@@ -153,10 +218,13 @@ def main():
     acoes = {
         "1": menu_cadastrar_cliente,
         "2": menu_listar_clientes,
-        "3": menu_criar_emprestimo,
-        "4": menu_listar_emprestimos,
-        "5": menu_ver_parcelas,
-        "6": menu_registrar_pagamento,
+        "3": menu_editar_cliente,
+        "4": menu_excluir_cliente,
+        "5": menu_criar_emprestimo,
+        "6": menu_listar_emprestimos,
+        "7": menu_cancelar_emprestimo,
+        "8": menu_ver_parcelas,
+        "9": menu_registrar_pagamento,
     }
 
     while True:

@@ -53,6 +53,23 @@ def buscar_cliente_por_id(cliente_id: int) -> Optional[Cliente]:
                     telefone=l["telefone"] or "", email=l["email"] or "")
 
 
+def atualizar_cliente(cliente: Cliente) -> None:
+    conn = get_connection()
+    conn.execute(
+        "UPDATE clientes SET nome = ?, cpf = ?, telefone = ?, email = ? WHERE id = ?",
+        (cliente.nome, cliente.cpf, cliente.telefone, cliente.email, cliente.id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def excluir_cliente(cliente_id: int) -> None:
+    conn = get_connection()
+    conn.execute("DELETE FROM clientes WHERE id = ?", (cliente_id,))
+    conn.commit()
+    conn.close()
+
+
 # ---------- Empréstimos ----------
 
 def salvar_emprestimo(emprestimo: Emprestimo) -> Emprestimo:

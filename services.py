@@ -27,6 +27,36 @@ def cadastrar_cliente(nome: str, cpf: str, telefone: str = "", email: str = "") 
     return repo.salvar_cliente(cliente)
 
 
+def atualizar_cliente(cliente_id: int, nome: str, cpf: str,
+                       telefone: str = "", email: str = "") -> Cliente:
+    if not nome.strip():
+        raise ValueError("Nome não pode ser vazio.")
+    if not cpf.strip():
+        raise ValueError("CPF não pode ser vazio.")
+    if repo.buscar_cliente_por_id(cliente_id) is None:
+        raise ValueError(f"Cliente com id {cliente_id} não encontrado.")
+
+    cliente = Cliente(id=cliente_id, nome=nome.strip(), cpf=cpf.strip(),
+                       telefone=telefone, email=email)
+    repo.atualizar_cliente(cliente)
+    return cliente
+
+
+def excluir_cliente(cliente_id: int) -> None:
+    if repo.buscar_cliente_por_id(cliente_id) is None:
+        raise ValueError(f"Cliente com id {cliente_id} não encontrado.")
+    # Não deixamos excluir um cliente que já tem empréstimos, para não
+    # deixar "empréstimos órfãos" no banco (sem dono) nem apagar histórico
+    # financeiro sem querer. A pessoa precisa lidar com os empréstimos
+    # primeiro (ex: cancelar os que estiverem em aberto).
+    if repo.listar_emprestimos(cliente_id):
+        raise ValueError(
+            "Este cliente possui empréstimos cadastrados e não pode ser excluído. "
+            "Cancele ou quite os empréstimos dele antes de excluir o cadastro."
+        )
+    repo.excluir_cliente(cliente_id)
+
+
 # ---------- Cálculo financeiro: Tabela Price ----------
 #
 # A Tabela Price (também chamada de "Sistema Francês de Amortização") é o
@@ -181,6 +211,88 @@ def atualizar_parcelas_atrasadas() -> int:
                 repo.atualizar_status_parcela(parcela.id, StatusParcela.ATRASADA)
                 total_atualizadas += 1
     return total_atualizadas
+
+
+def cancelar_emprestimo(emprestimo_id: int) -> None:
+    """
+    Cancela um empréstimo. Só permitimos cancelar se nenhuma parcela já
+    tiver sido paga — depois que existe dinheiro pago de verdade, cancelar
+    o contrato inteiro deixaria o histórico financeiro inconsistente
+    (dinheiro recebido "sumiria" sem explicação nos relatórios).
+    """
+    emprestimos = {e.id: e for e in repo.listar_emprestimos()}
+    emprestimo = emprestimos.get(emprestimo_id)
+    if emprestimo is None:
+        raise ValueError(f"Empréstimo com id {emprestimo_id} não encontrado.")
+    if emprestimo.status != StatusEmprestimo.ABERTO:
+        raise ValueError(f"Este empréstimo já está '{emprestimo.status.value}' e não pode ser cancelado.")
+    if any(p.status == StatusParcela.PAGA for p in emprestimo.parcelas):
+        raise ValueError("Não é possível cancelar: este empréstimo já tem parcela(s) paga(s).")
+    repo.atualizar_status_emprestimo(emprestimo_id, StatusEmprestimo.CANCELADO)
+
+
+def filtrar_emprestimos(status: str = "", busca: str = "") -> list[Emprestimo]:
+    """
+    Filtra empréstimos por status (aberto/quitado/cancelado) e/ou por texto
+    de busca (nome ou CPF do cliente). Feito em Python sobre a lista
+    completa em vez de SQL — para um sistema local de pequeno porte como
+    este, a diferença de performance é irrelevante, e fica bem mais simples
+    de ler e reaproveitar tanto na CLI quanto na web.
+    """
+    emprestimos = repo.listar_emprestimos()
+    clientes_por_id = {c.id: c for c in repo.listar_clientes()}
+
+    if status:
+        emprestimos = [e for e in emprestimos if e.status.value == status]
+
+    if busca:
+        busca = busca.strip().lower()
+        emprestimos = [
+            e for e in emprestimos
+            if busca in clientes_por_id[e.cliente_id].nome.lower()
+            or busca in clientes_por_id[e.cliente_id].cpf.lower()
+        ]
+
+    return emprestimos
+
+
+# ---------- Multa e juros de mora (parcelas atrasadas) ----------
+#
+# Regras usadas aqui, baseadas no que é comum e permitido em contratos no
+# Brasil (o Código de Defesa do Consumidor limita a multa por atraso a 2%
+# do valor da parcela):
+#
+#   multa      = 2% do valor da parcela, cobrada uma única vez
+#   juros_mora = 1% ao mês (proporcional aos dias de atraso) sobre o valor
+#                da parcela
+#
+# Esses valores não são gravados no banco — são calculados "na hora", porque
+# mudam a cada dia que passa. Guardar um valor de juros de mora do dia
+# anterior no banco significaria ele ficar desatualizado assim que a data
+# virasse.
+
+MULTA_ATRASO_PERCENTUAL = 0.02       # 2% (limite do CDC), cobrada uma vez
+JUROS_MORA_AO_MES = 0.01             # 1% ao mês, proporcional aos dias
+
+
+def calcular_encargos_atraso(parcela: Parcela, hoje: date = None) -> dict:
+    hoje = hoje or date.today()
+
+    if parcela.status != StatusParcela.ATRASADA:
+        return {"dias_atraso": 0, "multa": 0.0, "juros_mora": 0.0, "valor_atualizado": parcela.valor}
+
+    dias_atraso = max((hoje - parcela.data_vencimento).days, 0)
+    multa = round(parcela.valor * MULTA_ATRASO_PERCENTUAL, 2)
+    juros_mora_ao_dia = JUROS_MORA_AO_MES / 30
+    juros_mora = round(parcela.valor * juros_mora_ao_dia * dias_atraso, 2)
+    valor_atualizado = round(parcela.valor + multa + juros_mora, 2)
+
+    return {
+        "dias_atraso": dias_atraso,
+        "multa": multa,
+        "juros_mora": juros_mora,
+        "valor_atualizado": valor_atualizado,
+    }
 
 
 def resumo_emprestimo(emprestimo: Emprestimo) -> dict:

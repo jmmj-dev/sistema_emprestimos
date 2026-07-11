@@ -329,3 +329,58 @@ form.ficha {
   color: var(--ink-faint);
   font-size: 0.85rem;
 }
+
+/* ---------- Busca e filtros ---------- */
+
+form.busca {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+}
+
+form.busca input[type="text"],
+form.busca select {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+form.busca input[type="text"] { min-width: 220px; }
+
+.limpar-filtro {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  text-decoration: underline;
+}
+
+/* ---------- Ações em linha de tabela ---------- */
+
+td.acoes {
+  display: flex;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.botao.perigo {
+  color: var(--red);
+  border-color: var(--red);
+}
+.botao.perigo:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+/* ---------- Linha de encargos de atraso ---------- */
+
+tr.linha-encargo td {
+  padding: 0.4rem 0.9rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--red);
+  background: rgba(161, 58, 44, 0.05);
+}

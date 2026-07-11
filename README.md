@@ -75,12 +75,15 @@ parcela, exatamente como um extrato bancário real mostra.
 
 ## Funcionalidades
 
-- Cadastro de clientes
+- Cadastro, edição e exclusão de clientes (exclusão bloqueada se o cliente já tiver empréstimos)
 - Criação de empréstimos com cálculo pela Tabela Price (juros compostos) e geração automática das parcelas e vencimentos
+- Cancelamento de empréstimos (bloqueado se já houver parcela paga, para preservar o histórico financeiro)
 - Detalhamento de cada parcela em juros, amortização e saldo devedor
 - Marcação automática de parcelas atrasadas (comparando com a data atual)
+- Cálculo de multa (2%, limite do CDC) e juros de mora (1% ao mês, proporcional aos dias) sobre parcelas atrasadas
 - Registro de pagamento de parcelas
 - Quitação automática do empréstimo quando todas as parcelas são pagas
+- Busca e filtros: clientes por nome/CPF, empréstimos por status e por cliente
 - Resumo financeiro por empréstimo (total pago, pendente, atrasado, juros do contrato)
 - Extrato geral (dashboard) com totais consolidados de todos os empréstimos
 - Interface web navegável, sem precisar digitar comandos
@@ -89,7 +92,5 @@ parcela, exatamente como um extrato bancário real mostra.
 
 - [ ] Adicionar testes automatizados com `pytest`
 - [ ] Adicionar relatório de inadimplência exportável em CSV/PDF
-- [ ] Multa e juros de mora sobre parcelas atrasadas
 - [ ] Autenticação simples (login) se for usar em rede local com mais de uma pessoa
-- [ ] Edição/exclusão de clientes e empréstimos
-- [ ] Busca e filtros na listagem de empréstimos (por status, por cliente)
+- [ ] Permitir registrar pagamento pelo valor atualizado (com multa/juros de mora) em vez do valor original da parcela

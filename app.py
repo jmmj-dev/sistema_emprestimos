@@ -20,7 +20,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import repositories as repo
 import services
 from database import inicializar_banco
-from models import StatusParcela
+from models import Cliente, StatusParcela
 
 app = Flask(__name__)
 app.secret_key = "chave-de-desenvolvimento-troque-em-producao"
@@ -70,8 +70,12 @@ def dashboard():
 
 @app.route("/clientes")
 def listar_clientes():
+    busca = request.args.get("q", "").strip()
     clientes = repo.listar_clientes()
-    return render_template("clientes.html", clientes=clientes)
+    if busca:
+        busca_lower = busca.lower()
+        clientes = [c for c in clientes if busca_lower in c.nome.lower() or busca_lower in c.cpf.lower()]
+    return render_template("clientes.html", clientes=clientes, busca=busca)
 
 
 @app.route("/clientes/novo", methods=["GET", "POST"])
@@ -91,11 +95,49 @@ def novo_cliente():
     return render_template("novo_cliente.html")
 
 
+@app.route("/clientes/<int:cliente_id>/editar", methods=["GET", "POST"])
+def editar_cliente(cliente_id):
+    cliente = repo.buscar_cliente_por_id(cliente_id)
+    if cliente is None:
+        flash("Cliente não encontrado.", "erro")
+        return redirect(url_for("listar_clientes"))
+
+    if request.method == "POST":
+        try:
+            services.atualizar_cliente(
+                cliente_id=cliente_id,
+                nome=request.form["nome"],
+                cpf=request.form["cpf"],
+                telefone=request.form.get("telefone", ""),
+                email=request.form.get("email", ""),
+            )
+            flash("Cliente atualizado com sucesso.", "sucesso")
+            return redirect(url_for("listar_clientes"))
+        except ValueError as e:
+            flash(str(e), "erro")
+            cliente = Cliente(id=cliente_id, nome=request.form["nome"], cpf=request.form["cpf"],
+                               telefone=request.form.get("telefone", ""), email=request.form.get("email", ""))
+
+    return render_template("editar_cliente.html", cliente=cliente)
+
+
+@app.route("/clientes/<int:cliente_id>/excluir", methods=["POST"])
+def excluir_cliente(cliente_id):
+    try:
+        services.excluir_cliente(cliente_id)
+        flash("Cliente excluído com sucesso.", "sucesso")
+    except ValueError as e:
+        flash(str(e), "erro")
+    return redirect(url_for("listar_clientes"))
+
+
 # ---------- Empréstimos ----------
 
 @app.route("/emprestimos")
 def listar_emprestimos():
-    emprestimos = repo.listar_emprestimos()
+    status = request.args.get("status", "")
+    busca = request.args.get("q", "").strip()
+    emprestimos = services.filtrar_emprestimos(status=status, busca=busca)
     emprestimos.sort(key=lambda e: e.data_emprestimo, reverse=True)
     clientes_por_id = {c.id: c for c in repo.listar_clientes()}
     resumos = {e.id: services.resumo_emprestimo(e) for e in emprestimos}
@@ -104,6 +146,8 @@ def listar_emprestimos():
         emprestimos=emprestimos,
         clientes_por_id=clientes_por_id,
         resumos=resumos,
+        status_selecionado=status,
+        busca=busca,
     )
 
 
@@ -137,13 +181,30 @@ def detalhe_emprestimo(emprestimo_id):
         return redirect(url_for("listar_emprestimos"))
     cliente = repo.buscar_cliente_por_id(emprestimo.cliente_id)
     resumo = services.resumo_emprestimo(emprestimo)
+    encargos_por_parcela = {p.id: services.calcular_encargos_atraso(p) for p in emprestimo.parcelas}
+    pode_cancelar = (
+        emprestimo.status.value == "aberto"
+        and not any(p.status.value == "paga" for p in emprestimo.parcelas)
+    )
     return render_template(
         "emprestimo_detalhe.html",
         emprestimo=emprestimo,
         cliente=cliente,
         resumo=resumo,
         hoje=date.today(),
+        encargos_por_parcela=encargos_por_parcela,
+        pode_cancelar=pode_cancelar,
     )
+
+
+@app.route("/emprestimos/<int:emprestimo_id>/cancelar", methods=["POST"])
+def cancelar_emprestimo(emprestimo_id):
+    try:
+        services.cancelar_emprestimo(emprestimo_id)
+        flash("Empréstimo cancelado.", "sucesso")
+    except ValueError as e:
+        flash(str(e), "erro")
+    return redirect(url_for("detalhe_emprestimo", emprestimo_id=emprestimo_id))
 
 
 @app.route("/parcelas/<int:parcela_id>/pagar", methods=["POST"])
