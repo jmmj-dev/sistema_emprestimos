@@ -1,5 +1,6 @@
 # Sistema de Empréstimos
-<img width="1249" height="906" alt="python emprestimo" src="https://github.com/user-attachments/assets/21dc9ac3-aa82-4c8f-83b3-ee1ddc79da35" />
+<img width="1097" height="901" alt="tela app cobranca-python" src="https://github.com/user-attachments/assets/7fff0f7b-c5b7-44dc-85d5-a413b7f995b1" />
+
 
 <!--
   Print de tela da interface web. Depois de tirar a captura, arraste a
@@ -114,9 +115,8 @@ de automações de navegador fazerem o WhatsApp bloquear o número.
 - Valores formatados no padrão brasileiro (R$ 1.234,56)
 - Interface web navegável, sem precisar digitar comandos
 
-## Ideias para evoluir (ótimo para continuar aprendendo)
+## Ideias para evoluir 
 
-- [ ] Adicionar testes automatizados com `pytest`
 - [ ] Adicionar relatório de inadimplência exportável em CSV/PDF
 - [ ] Autenticação simples (login) se for usar em rede local com mais de uma pessoa
 - [ ] Permitir registrar pagamento pelo valor atualizado (com multa/juros de mora) em vez do valor original da parcela
