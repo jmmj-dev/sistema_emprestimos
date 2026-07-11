@@ -37,6 +37,13 @@ def atualizar_atrasos():
     services.atualizar_parcelas_atrasadas()
 
 
+@app.context_processor
+def injetar_contador_cobrancas():
+    # Disponibiliza essa variável em TODOS os templates automaticamente
+    # (não só na tela de cobranças), para mostrar o número no menu.
+    return {"total_cobrancas_pendentes": len(services.listar_cobrancas())}
+
+
 # ---------- Dashboard ----------
 
 @app.route("/")
@@ -218,6 +225,21 @@ def pagar_parcela(parcela_id):
     except Exception as e:
         flash(f"Erro ao registrar pagamento: {e}", "erro")
     return redirect(url_for("detalhe_emprestimo", emprestimo_id=emprestimo_id))
+
+
+# ---------- Cobrança via WhatsApp ----------
+
+@app.route("/cobrancas")
+def listar_cobrancas():
+    cobrancas = services.listar_cobrancas()
+    total_lembretes = sum(1 for c in cobrancas if c["tipo"] == "lembrete")
+    total_atrasos = sum(1 for c in cobrancas if c["tipo"] == "atraso")
+    return render_template(
+        "cobrancas.html",
+        cobrancas=cobrancas,
+        total_lembretes=total_lembretes,
+        total_atrasos=total_atrasos,
+    )
 
 
 if __name__ == "__main__":

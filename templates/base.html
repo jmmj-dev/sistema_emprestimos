@@ -15,6 +15,9 @@
         <a href="{{ url_for('dashboard') }}" class="{{ 'ativa' if request.endpoint == 'dashboard' }}">Extrato</a>
         <a href="{{ url_for('listar_clientes') }}" class="{{ 'ativa' if request.endpoint in ['listar_clientes', 'novo_cliente'] }}">Clientes</a>
         <a href="{{ url_for('listar_emprestimos') }}" class="{{ 'ativa' if request.endpoint in ['listar_emprestimos', 'novo_emprestimo', 'detalhe_emprestimo'] }}">Empréstimos</a>
+        <a href="{{ url_for('listar_cobrancas') }}" class="{{ 'ativa' if request.endpoint == 'listar_cobrancas' }}">
+          Cobranças{% if total_cobrancas_pendentes %} <span class="contador">{{ total_cobrancas_pendentes }}</span>{% endif %}
+        </a>
       </nav>
     </div>
   </header>

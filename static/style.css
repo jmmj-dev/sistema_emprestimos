@@ -384,3 +384,56 @@ tr.linha-encargo td {
   color: var(--red);
   background: rgba(161, 58, 44, 0.05);
 }
+
+/* ---------- Contador no menu ---------- */
+
+.contador {
+  display: inline-block;
+  background: var(--red);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  margin-left: 0.15rem;
+}
+
+/* ---------- Cartões de cobrança (WhatsApp) ---------- */
+
+.cartao-cobranca {
+  background: var(--paper-raised);
+  border: 1px solid var(--line-strong);
+  border-left: 4px solid var(--amber);
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.9rem;
+}
+
+.cartao-cobranca.atraso {
+  border-left-color: var(--red);
+}
+
+.cartao-cobranca-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.6rem;
+}
+
+.mensagem-preview {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 1px dashed var(--line-strong);
+  padding: 0.7rem 0.9rem;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.aviso-inline {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-style: italic;
+}

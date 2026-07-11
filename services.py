@@ -11,9 +11,12 @@ repositories.py. services.py só usa as funções que ele expõe.
 
 from datetime import date
 from calendar import monthrange
+import re
+from urllib.parse import quote
 
 import repositories as repo
 from models import Cliente, Emprestimo, Parcela, StatusEmprestimo, StatusParcela
+from utils import formatar_moeda
 
 
 # ---------- Clientes ----------
@@ -310,3 +313,107 @@ def resumo_emprestimo(emprestimo: Emprestimo) -> dict:
         "total_atrasado": round(total_atrasado, 2),
         "total_juros": round(total_juros, 2),
     }
+
+
+# ---------- Cobrança via WhatsApp ----------
+#
+# A ideia aqui não é enviar mensagem sozinho (isso exigiria uma API paga
+# tipo Twilio, ou automações de navegador instáveis que podem até fazer o
+# WhatsApp bloquear o número por comportamento suspeito). Em vez disso,
+# geramos um link "wa.me" — o mesmo link que o botão "Enviar mensagem" de
+# qualquer site usa — já com o número do cliente e a mensagem prontos.
+# Você só clica, confere, e aperta enviar. Zero custo, zero cadastro.
+
+DIAS_AVISO_PREVIO_PADRAO = 3  # a partir de quantos dias antes do vencimento já avisamos o cliente
+
+
+def _formatar_telefone_whatsapp(telefone: str) -> str:
+    """
+    Limpa o telefone (tira parênteses, traço, espaço) e garante o código
+    do país (55 = Brasil) na frente, que é o formato que o link do
+    WhatsApp exige. Ex: "(31) 99999-0000" -> "5531999990000"
+    """
+    apenas_digitos = re.sub(r"\D", "", telefone or "")
+    if not apenas_digitos:
+        return ""
+    if not apenas_digitos.startswith("55"):
+        apenas_digitos = "55" + apenas_digitos
+    return apenas_digitos
+
+
+def gerar_link_whatsapp(telefone: str, mensagem: str) -> str:
+    """Monta o link wa.me pronto para abrir o WhatsApp com a mensagem preenchida."""
+    numero = _formatar_telefone_whatsapp(telefone)
+    if not numero:
+        return ""
+    return f"https://wa.me/{numero}?text={quote(mensagem)}"
+
+
+def montar_mensagem_lembrete(cliente: Cliente, emprestimo: Emprestimo, parcela: Parcela) -> str:
+    primeiro_nome = cliente.nome.split()[0]
+    dias = (parcela.data_vencimento - date.today()).days
+    quando = "vence hoje" if dias == 0 else f"vence em {dias} dia(s)"
+    return (
+        f"Olá, {primeiro_nome}! 😊 Passando para lembrar que a parcela "
+        f"{parcela.numero}/{emprestimo.numero_parcelas} do seu empréstimo {quando} "
+        f"({parcela.data_vencimento.strftime('%d/%m/%Y')}), no valor de "
+        f"{formatar_moeda(parcela.valor)}. Qualquer dúvida, é só chamar!"
+    )
+
+
+def montar_mensagem_atraso(cliente: Cliente, emprestimo: Emprestimo, parcela: Parcela) -> str:
+    primeiro_nome = cliente.nome.split()[0]
+    encargos = calcular_encargos_atraso(parcela)
+    return (
+        f"Olá, {primeiro_nome}. A parcela {parcela.numero}/{emprestimo.numero_parcelas} "
+        f"do seu empréstimo venceu em {parcela.data_vencimento.strftime('%d/%m/%Y')} "
+        f"({encargos['dias_atraso']} dia(s) de atraso). Valor original: "
+        f"{formatar_moeda(parcela.valor)}. Com a multa e os juros de mora, o valor "
+        f"atualizado é {formatar_moeda(encargos['valor_atualizado'])}. Poderia regularizar "
+        f"assim que possível? Qualquer dúvida, estou à disposição."
+    )
+
+
+def listar_cobrancas(dias_aviso_previo: int = DIAS_AVISO_PREVIO_PADRAO) -> list[dict]:
+    """
+    Monta a lista de parcelas que precisam de contato: lembrete amigável
+    para quem vence nos próximos `dias_aviso_previo` dias (ou hoje), e
+    cobrança para quem já está atrasado. Cada item já vem com a mensagem
+    e o link do WhatsApp prontos para uso na tela (CLI ou web).
+    """
+    hoje = date.today()
+    clientes_por_id = {c.id: c for c in repo.listar_clientes()}
+    cobrancas = []
+
+    for emprestimo in repo.listar_emprestimos():
+        if emprestimo.status != StatusEmprestimo.ABERTO:
+            continue
+        cliente = clientes_por_id.get(emprestimo.cliente_id)
+        if cliente is None:
+            continue
+
+        for parcela in emprestimo.parcelas:
+            if parcela.status == StatusParcela.ATRASADA:
+                tipo = "atraso"
+                mensagem = montar_mensagem_atraso(cliente, emprestimo, parcela)
+            elif parcela.status == StatusParcela.PENDENTE:
+                dias_para_vencer = (parcela.data_vencimento - hoje).days
+                if not (0 <= dias_para_vencer <= dias_aviso_previo):
+                    continue
+                tipo = "lembrete"
+                mensagem = montar_mensagem_lembrete(cliente, emprestimo, parcela)
+            else:
+                continue
+
+            cobrancas.append({
+                "cliente": cliente,
+                "emprestimo": emprestimo,
+                "parcela": parcela,
+                "tipo": tipo,
+                "mensagem": mensagem,
+                "link_whatsapp": gerar_link_whatsapp(cliente.telefone, mensagem),
+            })
+
+    # Atrasados primeiro (mais urgente), depois por data de vencimento mais próxima
+    cobrancas.sort(key=lambda c: (c["tipo"] != "atraso", c["parcela"].data_vencimento))
+    return cobrancas

@@ -1,5 +1,14 @@
 # Sistema de Empréstimos
 
+<!--
+  Print de tela da interface web. Depois de tirar a captura, arraste a
+  imagem para dentro deste README pela edição no site do GitHub (o GitHub
+  gera o link sozinho) e troque a linha abaixo pelo link gerado. Até lá,
+  esta linha fica invisível na página (é um comentário HTML).
+
+  ![Extrato geral do sistema](URL_QUE_O_GITHUB_GERAR_AQUI)
+-->
+
 Sistema local para gerenciar clientes, empréstimos, parcelas, juros e
 vencimentos. Tem **duas interfaces** que reaproveitam exatamente a mesma
 lógica de negócio: uma no terminal e outra na web.
@@ -73,6 +82,20 @@ maior parte é amortização — mesmo o valor da parcela nunca mudando. O
 sistema guarda esse detalhamento (juros, amortização e saldo devedor) por
 parcela, exatamente como um extrato bancário real mostra.
 
+## Cobrança via WhatsApp
+
+O sistema gera links prontos do WhatsApp (`wa.me`) — o mesmo tipo de link
+que qualquer botão "fale conosco" de site usa — já com a mensagem
+preenchida para cada cliente:
+
+- **Lembrete amigável**: parcelas pendentes que vencem nos próximos 3 dias (ou hoje)
+- **Cobrança**: parcelas já atrasadas, incluindo o valor atualizado com multa e juros de mora
+
+Não há envio automático nem integração com API paga — você clica no link,
+o WhatsApp abre (web ou app) com a mensagem pronta, e você confere e aperta
+enviar. Isso evita custos, cadastro em plataformas de terceiros, e o risco
+de automações de navegador fazerem o WhatsApp bloquear o número.
+
 ## Funcionalidades
 
 - Cadastro, edição e exclusão de clientes (exclusão bloqueada se o cliente já tiver empréstimos)
@@ -81,11 +104,13 @@ parcela, exatamente como um extrato bancário real mostra.
 - Detalhamento de cada parcela em juros, amortização e saldo devedor
 - Marcação automática de parcelas atrasadas (comparando com a data atual)
 - Cálculo de multa (2%, limite do CDC) e juros de mora (1% ao mês, proporcional aos dias) sobre parcelas atrasadas
+- Lembretes e cobranças prontos para envio via WhatsApp (link direto, sem API paga)
 - Registro de pagamento de parcelas
 - Quitação automática do empréstimo quando todas as parcelas são pagas
 - Busca e filtros: clientes por nome/CPF, empréstimos por status e por cliente
 - Resumo financeiro por empréstimo (total pago, pendente, atrasado, juros do contrato)
 - Extrato geral (dashboard) com totais consolidados de todos os empréstimos
+- Valores formatados no padrão brasileiro (R$ 1.234,56)
 - Interface web navegável, sem precisar digitar comandos
 
 ## Ideias para evoluir (ótimo para continuar aprendendo)
@@ -94,3 +119,4 @@ parcela, exatamente como um extrato bancário real mostra.
 - [ ] Adicionar relatório de inadimplência exportável em CSV/PDF
 - [ ] Autenticação simples (login) se for usar em rede local com mais de uma pessoa
 - [ ] Permitir registrar pagamento pelo valor atualizado (com multa/juros de mora) em vez do valor original da parcela
+- [ ] Deixar o número de dias de aviso prévio do lembrete configurável pela tela (hoje é fixo em 3 dias)

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Cobranças · Livro de Empréstimos{% endblock %}
+
+{% block conteudo %}
+  <div class="eyebrow">WhatsApp</div>
+  <h1>Cobranças</h1>
+  <p class="subtitulo">
+    Lembretes amigáveis para parcelas perto do vencimento e cobranças para quem já está atrasado.
+    Clique em "Enviar" para abrir o WhatsApp com a mensagem já pronta — você só confere e aperta enviar.
+  </p>
+
+  <div class="extrato">
+    <div class="extrato-item">
+      <div class="extrato-label">Lembretes a enviar</div>
+      <div class="extrato-valor">{{ total_lembretes }}</div>
+    </div>
+    <div class="extrato-item">
+      <div class="extrato-label">Cobranças de atraso</div>
+      <div class="extrato-valor {{ 'vermelho' if total_atrasos > 0 }}">{{ total_atrasos }}</div>
+    </div>
+  </div>
+
+  {% if cobrancas %}
+    {% for c in cobrancas %}
+      <div class="cartao-cobranca {{ c.tipo }}">
+        <div class="cartao-cobranca-topo">
+          <div>
+            <span class="carimbo {{ 'atrasada' if c.tipo == 'atraso' else 'pendente' }}">
+              {{ 'atrasado' if c.tipo == 'atraso' else 'lembrete' }}
+            </span>
+            <strong>{{ c.cliente.nome }}</strong>
+            <span class="rotulo-parcela">— parcela {{ c.parcela.numero }}/{{ c.emprestimo.numero_parcelas }}
+              · vence {{ c.parcela.data_vencimento.strftime('%d/%m/%Y') }}</span>
+          </div>
+          {% if c.link_whatsapp %}
+            <a href="{{ c.link_whatsapp }}" target="_blank" rel="noopener" class="botao pequeno">Enviar via WhatsApp</a>
+          {% else %}
+            <span class="aviso-inline">sem telefone cadastrado</span>
+          {% endif %}
+        </div>
+        <p class="mensagem-preview">{{ c.mensagem }}</p>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="linha-vazia">Nenhuma cobrança pendente no momento — todas as parcelas estão em dia. 🎉</p>
+  {% endif %}
+{% endblock %}

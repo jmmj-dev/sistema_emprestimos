@@ -9,6 +9,7 @@ Para rodar: python main.py
 """
 
 from datetime import date, datetime
+import webbrowser
 
 import repositories as repo
 import services
@@ -194,6 +195,37 @@ def menu_registrar_pagamento():
         print(f"  Erro: {e}")
 
 
+def menu_cobrancas():
+    print("\n--- Cobranças (WhatsApp) ---")
+    cobrancas = services.listar_cobrancas()
+    if not cobrancas:
+        print("  Nenhuma cobrança pendente no momento — todas as parcelas estão em dia.")
+        return
+
+    for i, c in enumerate(cobrancas, start=1):
+        rotulo = "ATRASADO" if c["tipo"] == "atraso" else "lembrete"
+        tel = c["cliente"].telefone or "(sem telefone cadastrado)"
+        print(f"  [{i}] {rotulo:<9} {c['cliente'].nome} - {tel} - "
+              f"parcela {c['parcela'].numero}/{c['emprestimo'].numero_parcelas} - "
+              f"vence {c['parcela'].data_vencimento.strftime('%d/%m/%Y')}")
+
+    escolha = input("\nDigite o número para abrir o WhatsApp com a mensagem pronta (ENTER para voltar): ").strip()
+    if not escolha.isdigit():
+        return
+    indice = int(escolha) - 1
+    if not (0 <= indice < len(cobrancas)):
+        print("  Opção inválida.")
+        return
+
+    c = cobrancas[indice]
+    print(f"\n  Mensagem:\n  {c['mensagem']}\n")
+    if not c["link_whatsapp"]:
+        print("  Este cliente não tem telefone cadastrado — edite o cadastro dele para adicionar um.")
+        return
+    webbrowser.open(c["link_whatsapp"])
+    print("  Abrindo o WhatsApp no navegador...")
+
+
 def exibir_menu():
     print("\n" + "=" * 40)
     print("  SISTEMA DE EMPRÉSTIMOS")
@@ -207,6 +239,7 @@ def exibir_menu():
     print("  7. Cancelar empréstimo")
     print("  8. Ver parcelas de um empréstimo")
     print("  9. Registrar pagamento de parcela")
+    print("  10. Cobranças (WhatsApp)")
     print("  0. Sair")
 
 
@@ -226,6 +259,7 @@ def main():
         "7": menu_cancelar_emprestimo,
         "8": menu_ver_parcelas,
         "9": menu_registrar_pagamento,
+        "10": menu_cobrancas,
     }
 
     while True:
