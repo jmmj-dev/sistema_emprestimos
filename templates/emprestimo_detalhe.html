@@ -25,23 +25,23 @@
   <div class="extrato">
     <div class="extrato-item">
       <div class="extrato-label">Principal</div>
-      <div class="extrato-valor">R$ {{ "%.2f"|format(emprestimo.valor_principal) }}</div>
+      <div class="extrato-valor">{{ emprestimo.valor_principal | moeda }}</div>
     </div>
     <div class="extrato-item">
       <div class="extrato-label">Juros do contrato</div>
-      <div class="extrato-valor">R$ {{ "%.2f"|format(resumo.total_juros) }}</div>
+      <div class="extrato-valor">{{ resumo.total_juros | moeda }}</div>
     </div>
     <div class="extrato-item">
       <div class="extrato-label">Total do contrato</div>
-      <div class="extrato-valor">R$ {{ "%.2f"|format(resumo.valor_total_contrato) }}</div>
+      <div class="extrato-valor">{{ resumo.valor_total_contrato | moeda }}</div>
     </div>
     <div class="extrato-item">
       <div class="extrato-label">Pago</div>
-      <div class="extrato-valor verde">R$ {{ "%.2f"|format(resumo.total_pago) }}</div>
+      <div class="extrato-valor verde">{{ resumo.total_pago | moeda }}</div>
     </div>
     <div class="extrato-item">
       <div class="extrato-label">Em atraso</div>
-      <div class="extrato-valor {{ 'vermelho' if resumo.total_atrasado > 0 }}">R$ {{ "%.2f"|format(resumo.total_atrasado) }}</div>
+      <div class="extrato-valor {{ 'vermelho' if resumo.total_atrasado > 0 }}">{{ resumo.total_atrasado | moeda }}</div>
     </div>
   </div>
 
@@ -66,10 +66,10 @@
         <tr>
           <td>{{ p.numero }}</td>
           <td>{{ p.data_vencimento.strftime('%d/%m/%Y') }}</td>
-          <td class="numero">R$ {{ "%.2f"|format(p.juros) }}</td>
-          <td class="numero">R$ {{ "%.2f"|format(p.amortizacao) }}</td>
-          <td class="numero">R$ {{ "%.2f"|format(p.valor) }}</td>
-          <td class="numero">R$ {{ "%.2f"|format(p.saldo_devedor) }}</td>
+          <td class="numero">{{ p.juros | moeda }}</td>
+          <td class="numero">{{ p.amortizacao | moeda }}</td>
+          <td class="numero">{{ p.valor | moeda }}</td>
+          <td class="numero">{{ p.saldo_devedor | moeda }}</td>
           <td><span class="carimbo {{ p.status.value }}">{{ p.status.value }}</span></td>
           <td>{{ p.data_pagamento.strftime('%d/%m/%Y') if p.data_pagamento else '—' }}</td>
           <td>
@@ -85,9 +85,9 @@
           <tr class="linha-encargo">
             <td></td>
             <td colspan="7">
-              ⚠️ {{ encargos.dias_atraso }} dia(s) de atraso — multa de R$ {{ "%.2f"|format(encargos.multa) }}
-              + juros de mora de R$ {{ "%.2f"|format(encargos.juros_mora) }}
-              = <strong>valor atualizado R$ {{ "%.2f"|format(encargos.valor_atualizado) }}</strong>
+              ⚠️ {{ encargos.dias_atraso }} dia(s) de atraso — multa de {{ encargos.multa | moeda }}
+              + juros de mora de {{ encargos.juros_mora | moeda }}
+              = <strong>valor atualizado {{ encargos.valor_atualizado | moeda }}</strong>
             </td>
           </tr>
         {% endif %}

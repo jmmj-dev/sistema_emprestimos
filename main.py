@@ -14,6 +14,7 @@ import repositories as repo
 import services
 from database import inicializar_banco
 from models import StatusParcela
+from utils import formatar_moeda
 
 
 def ler_float(mensagem: str) -> float:
@@ -114,11 +115,11 @@ def menu_criar_emprestimo():
     try:
         emp = services.criar_emprestimo(cliente_id, valor, taxa, parcelas, data_txt)
         print(f"\n  Empréstimo criado! ID: {emp.id} (Tabela Price)")
-        print(f"  Valor de cada parcela: R$ {emp.parcelas[0].valor:.2f}")
-        print(f"  {'Parcela':<10}{'Vencimento':<14}{'Juros':<12}{'Amortização':<14}{'Saldo devedor':<14}")
+        print(f"  Valor de cada parcela: {formatar_moeda(emp.parcelas[0].valor)}")
+        print(f"  {'Parcela':<10}{'Vencimento':<14}{'Juros':<16}{'Amortização':<18}{'Saldo devedor':<16}")
         for p in emp.parcelas:
             print(f"  {p.numero:<10}{p.data_vencimento.strftime('%d/%m/%Y'):<14}"
-                  f"R$ {p.juros:<9.2f}R$ {p.amortizacao:<11.2f}R$ {p.saldo_devedor:<11.2f}")
+                  f"{formatar_moeda(p.juros):<16}{formatar_moeda(p.amortizacao):<18}{formatar_moeda(p.saldo_devedor):<16}")
     except ValueError as e:
         print(f"  Erro: {e}")
 
@@ -131,11 +132,11 @@ def _imprimir_emprestimos(emprestimos):
         cliente = repo.buscar_cliente_por_id(emp.cliente_id)
         resumo = services.resumo_emprestimo(emp)
         print(f"\n  [{emp.id}] Cliente: {cliente.nome} | Status: {emp.status.value}")
-        print(f"      Principal: R$ {emp.valor_principal:.2f} | Taxa: {emp.taxa_juros_mensal*100:.1f}%/mês | "
+        print(f"      Principal: {formatar_moeda(emp.valor_principal)} | Taxa: {emp.taxa_juros_mensal*100:.1f}%/mês | "
               f"{emp.numero_parcelas}x")
-        print(f"      Total do contrato: R$ {resumo['valor_total_contrato']:.2f} | "
-              f"Pago: R$ {resumo['total_pago']:.2f} | Pendente: R$ {resumo['total_pendente']:.2f} | "
-              f"Atrasado: R$ {resumo['total_atrasado']:.2f}")
+        print(f"      Total do contrato: {formatar_moeda(resumo['valor_total_contrato'])} | "
+              f"Pago: {formatar_moeda(resumo['total_pago'])} | Pendente: {formatar_moeda(resumo['total_pendente'])} | "
+              f"Atrasado: {formatar_moeda(resumo['total_atrasado'])}")
 
 
 def menu_listar_emprestimos():
@@ -173,14 +174,14 @@ def menu_ver_parcelas():
     icones = {StatusParcela.PENDENTE: "🕓", StatusParcela.PAGA: "✅", StatusParcela.ATRASADA: "⚠️ "}
     for p in parcelas:
         pago_em = f" (pago em {p.data_pagamento.strftime('%d/%m/%Y')})" if p.data_pagamento else ""
-        print(f"  {icones.get(p.status, '')} [{p.id}] Parcela {p.numero}: R$ {p.valor:.2f} "
-              f"(juros R$ {p.juros:.2f} + amort. R$ {p.amortizacao:.2f}) - "
+        print(f"  {icones.get(p.status, '')} [{p.id}] Parcela {p.numero}: {formatar_moeda(p.valor)} "
+              f"(juros {formatar_moeda(p.juros)} + amort. {formatar_moeda(p.amortizacao)}) - "
               f"vence {p.data_vencimento.strftime('%d/%m/%Y')} - status: {p.status.value}{pago_em}")
         if p.status == StatusParcela.ATRASADA:
             encargos = services.calcular_encargos_atraso(p)
-            print(f"        {encargos['dias_atraso']} dia(s) de atraso - multa R$ {encargos['multa']:.2f} "
-                  f"+ juros de mora R$ {encargos['juros_mora']:.2f} = "
-                  f"valor atualizado R$ {encargos['valor_atualizado']:.2f}")
+            print(f"        {encargos['dias_atraso']} dia(s) de atraso - multa {formatar_moeda(encargos['multa'])} "
+                  f"+ juros de mora {formatar_moeda(encargos['juros_mora'])} = "
+                  f"valor atualizado {formatar_moeda(encargos['valor_atualizado'])}")
 
 
 def menu_registrar_pagamento():

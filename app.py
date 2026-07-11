@@ -21,9 +21,11 @@ import repositories as repo
 import services
 from database import inicializar_banco
 from models import Cliente, StatusParcela
+from utils import formatar_moeda
 
 app = Flask(__name__)
 app.secret_key = "chave-de-desenvolvimento-troque-em-producao"
+app.jinja_env.filters["moeda"] = formatar_moeda
 
 inicializar_banco()
 

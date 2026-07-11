@@ -9,19 +9,19 @@
   <div class="extrato">
     <div class="extrato-item">
       <div class="extrato-label">Total emprestado</div>
-      <div class="extrato-valor">R$ {{ "%.2f"|format(total_emprestado) }}</div>
+      <div class="extrato-valor">{{ total_emprestado | moeda }}</div>
     </div>
     <div class="extrato-item">
       <div class="extrato-label">Recebido</div>
-      <div class="extrato-valor verde">R$ {{ "%.2f"|format(total_recebido) }}</div>
+      <div class="extrato-valor verde">{{ total_recebido | moeda }}</div>
     </div>
     <div class="extrato-item">
       <div class="extrato-label">A receber</div>
-      <div class="extrato-valor">R$ {{ "%.2f"|format(total_a_receber) }}</div>
+      <div class="extrato-valor">{{ total_a_receber | moeda }}</div>
     </div>
     <div class="extrato-item">
       <div class="extrato-label">Em atraso</div>
-      <div class="extrato-valor {{ 'vermelho' if total_atrasado > 0 }}">R$ {{ "%.2f"|format(total_atrasado) }}</div>
+      <div class="extrato-valor {{ 'vermelho' if total_atrasado > 0 }}">{{ total_atrasado | moeda }}</div>
     </div>
   </div>
 
@@ -46,7 +46,7 @@
           <tr onclick="window.location='{{ url_for('detalhe_emprestimo', emprestimo_id=emp.id) }}'" style="cursor:pointer">
             <td>{{ clientes_por_id[emp.cliente_id].nome }}</td>
             <td>{{ emp.data_emprestimo.strftime('%d/%m/%Y') }}</td>
-            <td class="numero">R$ {{ "%.2f"|format(emp.valor_principal) }}</td>
+            <td class="numero">{{ emp.valor_principal | moeda }}</td>
             <td>{{ emp.numero_parcelas }}x</td>
             <td><span class="carimbo {{ emp.status.value }}">{{ emp.status.value }}</span></td>
           </tr>
